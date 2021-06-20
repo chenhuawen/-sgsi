@@ -1,0 +1,185 @@
+# This is a basic workflow to help you get started with Actions名称：build_XiaoxinSGSIs
+
+在：
+  观看：
+    类型：[开始]
+#  推：
+#    分支：[主]
+#  拉请求：
+#    分支：[主]
+    
+工作：
+  构建：
+    运行：ubuntu-latest
+    如果：github.event.repository.owner.id == github.event.sender.id
+
+    步骤：
+       -名称：结帐
+         用途：动作/结帐@main
+       
+       -名称：清理
+         运行：|
+           docker rmi `docker 图像 -q`
+           sudo rm -rf /usr/share/dotnet /etc/mysql /etc/php /etc/apt/sources.list.d
+           sudo -E apt-get -y purge azure-cli ghc* zulu* hhvm llvm* firefox google* dotnet* powershell openjdk* mysql* php*
+           sudo -E apt-get 更新
+           sudo -E apt-get -y autoremove --purge
+           sudo -E apt-get clean 
+       
+       -名称：获取变量
+         运行：|
+           echo "::set-output name=rom_url::$(jq -r '.rom_url' sgsi.json)"
+           echo "::set-output name=rom_name::$(jq -r '.rom_name' sgsi.json)"
+           echo "::set-output name=pack_sgsi::$(jq -r '.pack_sgsi' sgsi.json)"
+           echo "::set-output name=make_miui::$(jq -r '.make_miui' sgsi.json)"
+           echo "::set-output name=make_flyme::$(jq -r '.make_flyme' sgsi.json)"
+           echo "::set-output name=make_coloros::$(jq -r '.make_coloros' sgsi.json)"
+           echo "::set-output name=make_h2os::$(jq -r '.make_h2os' sgsi.json)"
+           echo "::set-output name=make_smartisanos::$(jq -r '.make_smartisanos' sgsi.json)"
+           echo "::set-output name=make_zui::$(jq -r '.make_zui' sgsi.json)"
+           echo "::set-output name=make_super::$(jq -r '.make_super' sgsi.json)"
+           echo "::set-output name=upload_transfer::$(jq -r '.upload_transfer' sgsi.json)"
+           echo "::set-output name=upload_artifact::$(jq -r '.upload_artifact' sgsi.json)"
+           echo "::set-output name=upload_wss::$(jq -r '.upload_wss' sgsi.json)"
+         编号：无功
+           
+       -名称：下载小新SGSIs工具
+         用途：robinraju/release-downloader@v1
+         与：
+           存储库：“ xiaoxindada/SGSI-build-tool ”
+           标签：“ v1.8 ”
+           文件名：“ SGSI-build-tool.tar ”
+           
+       -名称：初始化环境
+         运行：|
+           须藤 tar -xf SGSI-build-tool.tar
+           须藤 rm -rf SGSI-build-tool/10/setup.sh
+           须藤 mv bin/setup.sh SGSI-build-tool/10/
+           cd SGSI-build-tool/10
+           须藤bash setup.sh
+           
+       -名称：下载ROM
+         运行：sudo wget -c ${{ steps.var.outputs.rom_url }} -O SGSI-build-tool/10/tmp/${{ steps.var.outputs.rom_name }}
+       
+       -名称：构建超级SGSI
+         如果：steps.var.outputs.make_super == 'true'
+         运行：|
+           sed -i 's/SGSI.sh/dynamic_SGSI.sh/g' SGSI-build-tool/10/make.sh
+       
+       -名称：制作 MIUI SGSI
+         如果：steps.var.outputs.make_miui == 'true'
+         运行：|
+           须藤 rm -rf SGSI-build-tool/10/fixbug/fixbug.sh
+           mv fix/MIUI.sh SGSI-build-tool/10/fixbug/fixbug.sh
+           
+       -名称：制作 Flyme SGSI
+         如果：steps.var.outputs.make_flyme == 'true'
+         运行：|
+           须藤 rm -rf SGSI-build-tool/10/fixbug/fixbug.sh
+           mv fix/Flyme.sh SGSI-build-tool/10/fixbug/fixbug.sh
+           
+       -名称：制作 ColorOS SGSI
+         如果：steps.var.outputs.make_coloros == 'true'
+         运行：|
+           须藤 python3 SGSI-build-tool/10/oppo_ozip/ozipdecrypt.py SGSI-build-tool/10/tmp/${{steps.var.outputs.rom_name}}
+           sudo rm -rf SGSI-build-tool/10/tmp/${{steps.var.outputs.rom_name}} SGSI-build-tool/10/fixbug/fixbug.sh
+           mv fix/ColorOS.sh SGSI-build-tool/10/fixbug/fixbug.sh
+           
+       -名称：制作 H2OS SGSI
+         如果：steps.var.outputs.make_h2os == 'true'
+         运行：|
+           须藤 rm -rf SGSI-build-tool/10/fixbug/fixbug.sh
+           mv fix/H2OS.sh SGSI-build-tool/10/fixbug/fixbug.sh
+           
+       -名称：制作 SmartisanOS SGSI
+         如果：steps.var.outputs.make_smartisanos == 'true'
+         运行：|
+           须藤 rm -rf SGSI-build-tool/10/fixbug/fixbug.sh
+           mv fix/SmartisanOS.sh SGSI-build-tool/10/fixbug/fixbug.sh
+           
+       -名称: Make ZUI SGSI
+         如果：steps.var.outputs.make_zui == 'true'
+         运行：|
+           须藤 rm -rf SGSI-build-tool/10/fixbug/fixbug.sh
+           mv fix/ZUI.sh SGSI-build-tool/10/fixbug/fixbug.sh
+            
+       -名称：生成SGSI
+         运行：|
+           rm -rf SGSI-build-tool/10/SGSI.sh SGSI-build-tool/10/makeimg.sh SGSI-build-tool/10/bin/mke2fs SGSI-build-tool/10/bin/e2fsdroid SGSI-build -tool/10/dynamic_SGSI.sh SGSI-build-tool/10/oppo.sh 
+           mv make/makeimg.sh make/SGSI.sh make/dynamic_SGSI.sh make/oppo.sh SGSI-build-tool/10/
+           mv bin/mke2fs bin/e2fsdroid SGSI-build-tool/10/bin/
+           cd SGSI-build-tool/10
+           须藤 bash make.sh
+       -名称：准备文件以制作补丁
+         运行：|
+           zip -r Prepare_patch.zip SGSI-build-tool/10/out/vendor/app/* SGSI-build-tool/10/out/vendor/bin/* SGSI-build-tool/10/out/vendor/etc/ * SGSI-build-tool/10/out/vendor/lib/* SGSI-build-tool/10/out/vendor/lib64/* SGSI-build-tool/10/out/vendor/overlay/*
+           sudo mv Prepare_patch.zip SGSI-build-tool/10/SGSI/
+           
+       -名称：拉链补丁  
+         运行：|
+           zip -r Patch1.zip 补丁/Patch1/*
+           zip -r Patch2.zip 补丁/Patch2/*
+           zip -r Patch3.zip 补丁/Patch3/*
+           sudo mv Patch1.zip Patch2.zip Patch3.zip SGSI-build-tool/10/SGSI/
+       -名称：7z SGSI
+         运行：7za a -t7z -r ${{ steps.var.outputs.pack_sgsi }} SGSI-build-tool/10/SGSI/*
+
+       -名称：将SGSI 上传到 WeTransfer
+         如果：steps.var.outputs.upload_transfer == 'true'
+         运行：|
+           curl -sL https://git.io/file-transfer | 嘘
+           ./transfer 湿 ${{ steps.var.outputs.pack_sgsi }}
+       
+       -名称：将SGSI 上传到 cowTransfer
+         如果：steps.var.outputs.upload_cowtransfer == 'true'
+         运行：|
+           curl -sL https://git.io/cowtransfer | 嘘
+           ./cowtransfer-uploader ${{ steps.var.outputs.pack_sgsi }}
+       
+       - name :上传SGSI到文书书
+         如果：steps.var.outputs.upload_wss == 'true'
+         运行：|
+           curl -sL https://git.io/file-transfer | 嘘
+           ./transfer wss ${{ steps.var.outputs.pack_sgsi }}
+       
+       -名称：将SGSI 上传到 Artifact
+         如果：steps.var.outputs.upload_artifact == 'true'
+         用途：动作/上传工件@v2
+         与：
+           名称：小新SGSI
+           路径：${{steps.var.outputs.pack_sgsi }}
+
+name: CI
+
+# Controls when the action will run. 
+on:
+  # Triggers the workflow on push or pull request events but only for the main branch
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+  # Allows you to run this workflow manually from the Actions tab
+  workflow_dispatch:
+
+# A workflow run is made up of one or more jobs that can run sequentially or in parallel
+jobs:
+  # This workflow contains a single job called "build"
+  build:
+    # The type of runner that the job will run on
+    runs-on: ubuntu-latest
+
+    # Steps represent a sequence of tasks that will be executed as part of the job
+    steps:
+      # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
+      - uses: actions/checkout@v2
+
+      # Runs a single command using the runners shell
+      - name: Run a one-line script
+        run: echo Hello, world!
+
+      # Runs a set of commands using the runners shell
+      - name: Run a multi-line script
+        run: |
+          echo Add other actions to build,
+          echo test, and deploy your project.
